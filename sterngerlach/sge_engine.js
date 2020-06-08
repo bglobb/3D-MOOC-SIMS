@@ -840,7 +840,7 @@ SGE.Viewport3D = function(w, h, bgcolor) { SGE.Component.call(this); // initiali
 		// SGE does not provide an interface for the settings, as that would be redundant
 		// Most of the settings do not need changing anyway, at least not in normal circumstances
 		this.__scene = new THREE.Scene();
-		this.__renderer = new THREE.WebGLRenderer({ antialias: false, precision: "highp" });
+		this.__renderer = new THREE.WebGLRenderer({ antialias: SGE.ANTIALIAS, precision: "highp" });
 		this.__renderer.setSize(w, h);
 		this.__renderer.setClearColor(this.backgroundColor);
 		// Insert renderer element into the Viewport3D div
