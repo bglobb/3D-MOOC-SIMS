@@ -134,7 +134,11 @@ function draw_frames() {
     vec4 pixel2 = texture2D(image2, v_texcoord);
     vec4 depth1 = texture2D(depth1, v_texcoord);
     vec4 depth2 = texture2D(depth2, v_texcoord);
-    if (depth1.r<depth2.r) {
+    if (pixel1.rgb==vec3(1, 1, 1)) {
+      gl_FragColor = pixel2;
+    } else if (pixel2.rgb==vec3(1, 1, 1)) {
+      gl_FragColor = pixel1;
+    } else if (depth1.r<depth2.r) {
       gl_FragColor = pixel1;
     } else {
       gl_FragColor = pixel2;
@@ -157,7 +161,11 @@ function draw_frames() {
     vec4 pixel2 = texture2D(image2, v_texcoord);
     vec4 depth1 = texture2D(depth1, v_texcoord);
     vec4 depth2 = texture2D(depth2, v_texcoord);
-    if (depth1.r<depth2.r) {
+    if (pixel1.rgb==vec3(1, 1, 1)) {
+      gl_FragColor = depth2;
+    } else if (pixel2.rgb==vec3(1, 1, 1)) {
+      gl_FragColor = depth1;
+    } else if (depth1.r<depth2.r) {
       gl_FragColor = depth1;
     } else {
       gl_FragColor = depth2;
