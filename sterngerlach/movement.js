@@ -138,7 +138,7 @@ function draw_frames() {
       gl_FragColor = pixel2;
     } else if (pixel2.rgb==vec3(1, 1, 1)) {
       gl_FragColor = pixel1;
-    } else if (depth1.r<depth2.r) {
+    } else if (depth1.r<depth2.r-0.001) {
       gl_FragColor = pixel1;
     } else {
       gl_FragColor = pixel2;
@@ -165,7 +165,7 @@ function draw_frames() {
       gl_FragColor = depth2;
     } else if (pixel2.rgb==vec3(1, 1, 1)) {
       gl_FragColor = depth1;
-    } else if (depth1.r<depth2.r) {
+    } else if (depth1.r<depth2.r-0.001) {
       gl_FragColor = depth1;
     } else {
       gl_FragColor = depth2;
