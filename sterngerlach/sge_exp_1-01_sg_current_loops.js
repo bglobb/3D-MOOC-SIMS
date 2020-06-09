@@ -29,7 +29,7 @@
 
 // #################################################################################################
 // Setup application
-var [w, h] = [6000, 3000];
+var [w, h] = [800, 400];
 // Create an SGE Application with given name and dimensions
 var app = SGE.createApp("SGEApplication", w+20, h+200);
 
