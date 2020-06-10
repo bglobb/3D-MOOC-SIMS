@@ -53,6 +53,7 @@ var start = 0;
 var end = 19;
 var skip = end+1;
 var delay = 0;
+var start_transparency = 0.7;
 var images;
 
 btGo.div.onclick = function() {
@@ -126,22 +127,23 @@ function draw_frames() {
   uniform sampler2D image2;
   uniform sampler2D depth1;
   uniform sampler2D depth2;
+  uniform float iter;
   vec3 gray(vec4 col) {
     return vec3((col.r+col.g+col.b)/3.0);
   }
   void main() {
-    vec4 pixel1 = texture2D(image1, v_texcoord);
-    vec4 pixel2 = texture2D(image2, v_texcoord);
+    vec3 pixel1 = texture2D(image1, v_texcoord).rgb;
+    vec3 pixel2 = texture2D(image2, v_texcoord).rgb;
     vec4 depth1 = texture2D(depth1, v_texcoord);
     vec4 depth2 = texture2D(depth2, v_texcoord);
-    if (pixel1.rgb==vec3(1, 1, 1)) {
-      gl_FragColor = pixel2;
-    } else if (pixel2.rgb==vec3(1, 1, 1)) {
-      gl_FragColor = pixel1;
+    if (pixel1==vec3(1, 1, 1)) {
+      gl_FragColor = vec4(pixel2*iter+(1.0-iter)*pixel1, 1);
+    } else if (pixel2==vec3(1, 1, 1)) {
+      gl_FragColor = vec4(pixel1*iter+(1.0-iter)*pixel2, 1);
     } else if (depth1.r<depth2.r-0.001) {
-      gl_FragColor = pixel1;
+      gl_FragColor = vec4(pixel1*iter+(1.0-iter)*pixel2, 1);
     } else {
-      gl_FragColor = pixel2;
+      gl_FragColor = vec4(pixel2*iter+(1.0-iter)*pixel1, 1);
     }
   }
   `
@@ -165,7 +167,7 @@ function draw_frames() {
       gl_FragColor = depth2;
     } else if (pixel2.rgb==vec3(1, 1, 1)) {
       gl_FragColor = depth1;
-    } else if (depth1.r<depth2.r-0.001) {
+    } else if (depth1.r<depth2.r) {
       gl_FragColor = depth1;
     } else {
       gl_FragColor = depth2;
@@ -200,6 +202,7 @@ function draw_frames() {
   gl.uniform1i(gl.getUniformLocation(prgm, "image2"), 1);
   gl.uniform1i(gl.getUniformLocation(prgm, "depth1"), 2);
   gl.uniform1i(gl.getUniformLocation(prgm, "depth2"), 3);
+  var iter_location = gl.getUniformLocation(prgm, "iter");
 
   gl.useProgram(prgm2);
   gl.uniform1i(gl.getUniformLocation(prgm2, "image1"), 0);
@@ -316,6 +319,7 @@ function draw_frames() {
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
   gl.useProgram(prgm);
+  gl.uniform1f(iter_location, start_transparency);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, images[start].image);
   gl.activeTexture(gl.TEXTURE1);
@@ -363,6 +367,7 @@ function draw_frames() {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
         gl.useProgram(prgm);
+        gl.uniform1f(iter_location, (i-start)/(end-start)*(1-start_transparency)+start_transparency);
         gl.activeTexture(gl.TEXTURE4);
         gl.bindTexture(gl.TEXTURE_2D, tex_out);
         gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
