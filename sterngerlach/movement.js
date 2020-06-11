@@ -53,7 +53,7 @@ var start = 0;
 var end = 19;
 var skip = end+1;
 var delay = 0;
-var start_transparency = 0.7;
+var start_transparency = 1;
 var images;
 
 btGo.div.onclick = function() {
