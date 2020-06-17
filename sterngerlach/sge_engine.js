@@ -173,8 +173,8 @@ SGE.LOOP_CHARGE_RADIUS			=	0.075;
 SGE.LOOP_USE_I_ARROW			=	true;
 SGE.LOOP_I_ARROW_COLOR			=	SGE.LOOP_COLOR;
 SGE.LOOP_I_ARROW_RADIUS			=	SGE.LOOP_RADIUS; // radius the arrow curves around
-SGE.LOOP_I_ARROW_TUBE_RADIUS	=	0.02;
-SGE.LOOP_I_ARROW_HEAD_RADIUS	=	0.06;
+SGE.LOOP_I_ARROW_TUBE_RADIUS	=	0;  // 0.02 originally
+SGE.LOOP_I_ARROW_HEAD_RADIUS	=	0;  // 0.06 originally
 SGE.LOOP_I_ARROW_CURVE_DETAIL	=	SGE.MESH_ROUND_SEGMENTS; // number of segments to create arrow
 SGE.LOOP_I_ARROW_TUBE_DETAIL	=	6; // number of segments to create tube
 SGE.LOOP_I_ARROW_MAX_ANGLE		=	SGE.TAU/360*300; // angle covered by the arrow (tail to tip)
@@ -184,7 +184,7 @@ SGE.LOOP_I_ARROW_HEAD_ANGLE		=	SGE.TAU/360*20; // angle covered by the head
 SGE.LOOP_FIELD_AXIS_COLOR		=	0x7F7F7F;
 SGE.LOOP_FIELD_AXIS_OPACITY		=	0.75;
 SGE.LOOP_FIELD_CONE_OPACITY		=	0.3;
-SGE.LOOP_FIELD_AXIS_SIZE		=	1; // length of the magnetic field axis that shows up
+SGE.LOOP_FIELD_AXIS_SIZE		=	0; // length of the magnetic field axis that shows up  // Initially 1
 
 // Animation settings
 SGE.LOOP_SPIN_FREQUENCY			=	1; // how fast the charge spins around
