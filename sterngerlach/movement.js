@@ -63,9 +63,12 @@ btGo.div.onclick = function() {
     var interval = setInterval(function () {
       if (i < n_images) {
         //images.push(viewport.canvas3d.toDataURL("png"));
-        images.push(textures());
+        textures();
       } else {
         clearInterval(interval);
+        if (n_images !== 0) {
+          draw_frames();
+        }
       }
       i++;
     }, t);
@@ -78,10 +81,12 @@ btNext.div.onclick = function() {
     images = [];
     var interval = setInterval(function () {
       if (i < n_images) {
-        //images.push(viewport.canvas3d.toDataURL("png"));
-        images.push(textures());
+        textures();
       } else {
         clearInterval(interval);
+        if (n_images !== 0) {
+          draw_frames();
+        }
       }
       i++;
     }, t);
@@ -90,17 +95,26 @@ btNext.div.onclick = function() {
 
 
 function textures() {
+
   var renderer = viewport.__renderer;
-  // Create the texture that will store our result
-  this.depth_texture = new THREE.DepthTexture(viewport.width, viewport.height);
+
+  var depth_texture = new THREE.DepthTexture(viewport.width, viewport.height);
   var rt = new THREE.WebGLRenderTarget( viewport.width, viewport.height, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
   rt.depthTexture = depth_texture;
-
-
-
   renderer.render(viewport.__scene, viewport.__camera, rt);
-  return {image: renderer.properties.get(rt.texture).__webglTexture, depth: renderer.properties.get(rt.depthTexture).__webglTexture};
+
+  this.png_data = new THREE.TextureLoader().load(viewport.canvas3d.toDataURL("png"));
+  setTimeout(function() {
+    png_data.generateMipmaps = false;
+    png_data.wrapS = png_data.wrapT = THREE.ClampToEdgeWrapping;
+    png_data.minFilter = THREE.LinearFilter;
+    renderer.setTexture2D(png_data, 0);
+
+    images.push({image: renderer.properties.get(png_data).__webglTexture, depth: renderer.properties.get(rt.depthTexture).__webglTexture});
+
+  }, 5);
 }
+
 
 
 
@@ -131,16 +145,32 @@ function draw_frames() {
   vec3 gray(vec4 col) {
     return vec3((col.r+col.g+col.b)/3.0);
   }
+  float d1(vec2 dir) {
+    return texture2D(depth1, v_texcoord+dir/vec2(800.0, 400.0)).r;
+  }
+  float d2(vec2 dir) {
+    return texture2D(depth2, v_texcoord+dir/vec2(800.0, 400.0)).r;
+  }
   void main() {
     vec3 pixel1 = texture2D(image1, v_texcoord).rgb;
     vec3 pixel2 = texture2D(image2, v_texcoord).rgb;
-    vec4 depth1 = texture2D(depth1, v_texcoord);
-    vec4 depth2 = texture2D(depth2, v_texcoord);
-    if (pixel1==vec3(1, 1, 1)) {
-      gl_FragColor = vec4(pixel2*iter+(1.0-iter)*pixel1, 1);
-    } else if (pixel2==vec3(1, 1, 1)) {
-      gl_FragColor = vec4(pixel1*iter+(1.0-iter)*pixel2, 1);
-    } else if (depth1.r<depth2.r-0.001) {
+    float depth1 = d1(vec2(0, 0));
+    float depth2 = d2(vec2(0, 0));
+
+    float Ndepth1 = d1(vec2(0, -1));
+    float Edepth1 = d1(vec2(1, 0));
+    float Sdepth1 = d1(vec2(0, 1));
+    float Wdepth1 = d1(vec2(-1, 0));
+
+    float Ndepth2 = d2(vec2(0, -1));
+    float Edepth2 = d2(vec2(1, 0));
+    float Sdepth2 = d2(vec2(0, 1));
+    float Wdepth2 = d2(vec2(-1, 0));
+
+    depth1 = min(min(min(depth1, Ndepth1), min(Edepth1, Sdepth1)), Wdepth1);
+    depth2 = min(min(min(depth2, Ndepth2), min(Edepth2, Sdepth2)), Wdepth2);
+
+    if (depth1<depth2-1.0/255.0) {
       gl_FragColor = vec4(pixel1*iter+(1.0-iter)*pixel2, 1);
     } else {
       gl_FragColor = vec4(pixel2*iter+(1.0-iter)*pixel1, 1);
@@ -163,11 +193,7 @@ function draw_frames() {
     vec4 pixel2 = texture2D(image2, v_texcoord);
     vec4 depth1 = texture2D(depth1, v_texcoord);
     vec4 depth2 = texture2D(depth2, v_texcoord);
-    if (pixel1.rgb==vec3(1, 1, 1)) {
-      gl_FragColor = depth2;
-    } else if (pixel2.rgb==vec3(1, 1, 1)) {
-      gl_FragColor = depth1;
-    } else if (depth1.r<depth2.r) {
+    if (depth1.r<depth2.r) {
       gl_FragColor = depth1;
     } else {
       gl_FragColor = depth2;
@@ -280,24 +306,15 @@ function draw_frames() {
 
   var fb = gl.createFramebuffer();
 
-  function data_texture(tex, data, width, height) {
-    gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  }
-
   var tex_in = gl.createTexture();
-  data_texture(tex_in, null, viewport.width, viewport.height);
+  data_texture(gl, tex_in, null, viewport.width, viewport.height);
   var tex_out = gl.createTexture();
-  data_texture(tex_out, null, viewport.width, viewport.height);
+  data_texture(gl, tex_out, null, viewport.width, viewport.height);
 
   var depth_in = gl.createTexture();
-  data_texture(depth_in, null, viewport.width, viewport.height);
+  data_texture(gl, depth_in, null, viewport.width, viewport.height);
   var depth_out = gl.createTexture();
-  data_texture(depth_out, null, viewport.width, viewport.height);
+  data_texture(gl, depth_out, null, viewport.width, viewport.height);
 
 
 
@@ -316,6 +333,10 @@ function draw_frames() {
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, depth_out, 0);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  if (end-start===1) {
+    this.depth_buffer = new Uint8Array(viewport.width*viewport.height*4);
+    gl.readPixels(0, 0, viewport.width, viewport.height, gl.RGBA, gl.UNSIGNED_BYTE, depth_buffer);
+  }
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
   gl.useProgram(prgm);
@@ -339,15 +360,16 @@ function draw_frames() {
     draw_final();
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   } else {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     for (var i = start+1; i < end; i++) {
       if (i !== skip) {
         tex_in = tex_out;
         var tex_out = gl.createTexture();
-        data_texture(tex_out, null, viewport.width, viewport.height);
+        data_texture(gl, tex_out, null, viewport.width, viewport.height);
 
         depth_in = depth_out;
         var depth_out = gl.createTexture();
-        data_texture(depth_out, null, viewport.width, viewport.height);
+        data_texture(gl, depth_out, null, viewport.width, viewport.height);
 
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, tex_in);
@@ -364,6 +386,10 @@ function draw_frames() {
         gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, depth_out, 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        if (i===end-1) {
+          this.depth_buffer = new Uint8Array(viewport.width*viewport.height*4);
+          gl.readPixels(0, 0, viewport.width, viewport.height, gl.RGBA, gl.UNSIGNED_BYTE, depth_buffer);
+        }
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
         gl.useProgram(prgm);
@@ -377,8 +403,8 @@ function draw_frames() {
           this.buffer = new Uint8Array(viewport.width*viewport.height*4);
           gl.readPixels(0, 0, viewport.width, viewport.height, gl.RGBA, gl.UNSIGNED_BYTE, buffer);
           draw_final();
-          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         }
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       }
     }
   }
@@ -407,9 +433,12 @@ function draw_final() {
   precision highp float;
   varying vec2 v_texcoord;
   uniform sampler2D image;
+  uniform sampler2D depth;
+
   vec4 gray(vec4 col) {
-    return vec4(vec3(col.r+col.g+col.b)/3.0, 1);
+    return vec4(vec3((col.r+col.g+col.b)/3.0), 1);
   }
+
   void main() {
     gl_FragColor = gray(texture2D(image, v_texcoord));
   }
@@ -426,6 +455,9 @@ function draw_final() {
   gl2.attachShader(prgm, fs);
   gl2.linkProgram(prgm);
   gl2.useProgram(prgm);
+
+  gl2.uniform1i(gl2.getUniformLocation(prgm, "image"), 0);
+  gl2.uniform1i(gl2.getUniformLocation(prgm, "depth"), 1);
 
   var vertices = new Float32Array([
     -1, -1,
@@ -468,15 +500,23 @@ function draw_final() {
   gl2.enableVertexAttribArray(tal);
 
   var tex = gl2.createTexture();
-  gl2.bindTexture(gl2.TEXTURE_2D, tex);
-  gl2.texImage2D(gl2.TEXTURE_2D, 0, gl2.RGBA, viewport.width, viewport.height, 0, gl2.RGBA, gl2.UNSIGNED_BYTE, buffer);
-  gl2.texParameteri(gl2.TEXTURE_2D, gl2.TEXTURE_WRAP_S, gl2.CLAMP_TO_EDGE);
-  gl2.texParameteri(gl2.TEXTURE_2D, gl2.TEXTURE_WRAP_T, gl2.CLAMP_TO_EDGE);
-  gl2.texParameteri(gl2.TEXTURE_2D, gl2.TEXTURE_MIN_FILTER, gl2.NEAREST);
-  gl2.texParameteri(gl2.TEXTURE_2D, gl2.TEXTURE_MAG_FILTER, gl2.NEAREST);
+  data_texture(gl2, tex, buffer, viewport.width, viewport.height);
+  var depth = gl2.createTexture();
+  data_texture(gl2, depth, depth_buffer, viewport.width, viewport.height);
 
   gl2.activeTexture(gl2.TEXTURE0);
   gl2.bindTexture(gl2.TEXTURE_2D, tex);
+  gl2.activeTexture(gl2.TEXTURE1);
+  gl2.bindTexture(gl2.TEXTURE_2D, depth);
 
   gl2.drawArrays(gl2.TRIANGLE_STRIP, 0, 4);
+}
+
+function data_texture(gl, tex, data, width, height) {
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 }
