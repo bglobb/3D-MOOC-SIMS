@@ -50,8 +50,8 @@ var SGE = {};
 SGE.TAU							=	6.2831853071; // tau > pi!
 SGE.EPSILON						=	1e-2; // how much to nudge surfaces so they don't intersect
 SGE.DEFAULT_CAMERA_FOV			=	60; // field of view for camera
-SGE.CAMERA_Z_NEAR				=	0.1; // camera frustum z-near distance
-SGE.CAMERA_Z_FAR				=	1000; // camera frustum z-far distance
+SGE.CAMERA_Z_NEAR				=	1; // camera frustum z-near distance
+SGE.CAMERA_Z_FAR				=	20; // camera frustum z-far distance
 SGE.SKY_RADIUS					=	10000; // radius for the sky-sphere (half of z-far is max)
 SGE.ANTIALIAS					=	true; // request antialiasing on the WebGL renderer
 SGE.AXIS_SIZE					=	1;
@@ -840,7 +840,7 @@ SGE.Viewport3D = function(w, h, bgcolor) { SGE.Component.call(this); // initiali
 		// SGE does not provide an interface for the settings, as that would be redundant
 		// Most of the settings do not need changing anyway, at least not in normal circumstances
 		this.__scene = new THREE.Scene();
-		this.__renderer = new THREE.WebGLRenderer({ antialias: SGE.ANTIALIAS, precision: "highp" });
+		this.__renderer = new THREE.WebGLRenderer({ antialias: SGE.ANTIALIAS, precision: "highp", preserveDrawingBuffer: true });
 		this.__renderer.setSize(w, h);
 		this.__renderer.setClearColor(this.backgroundColor);
 		// Insert renderer element into the Viewport3D div
