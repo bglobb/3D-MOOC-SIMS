@@ -95,7 +95,7 @@ btNext.div.onclick = function() {
 
 
 function textures() {
-
+  stop = 1;
   var renderer = viewport.__renderer;
 
   var depth_texture = new THREE.DepthTexture(viewport.width, viewport.height);
@@ -110,8 +110,8 @@ function textures() {
     png_data.minFilter = THREE.LinearFilter;
     renderer.setTexture2D(png_data, 0);
 
-    images.push({image: renderer.properties.get(png_data).__webglTexture, depth: renderer.properties.get(rt.depthTexture).__webglTexture});
-
+    images.push({antialisased: renderer.properties.get(png_data).__webglTexture, aliased: renderer.properties.get(rt.texture).__webglTexture, depth: renderer.properties.get(rt.depthTexture).__webglTexture});
+    stop = 0;
   }, 5);
 }
 
@@ -119,7 +119,6 @@ function textures() {
 
 
 function draw_frames() {
-  stop = 1;
   this.gl = viewport.__renderer.context;
 
   var vs_source =
@@ -141,10 +140,60 @@ function draw_frames() {
   uniform sampler2D image2;
   uniform sampler2D depth1;
   uniform sampler2D depth2;
+  uniform sampler2D aliased_image1;
+  uniform sampler2D aliased_image2;
+  uniform float opa;
   uniform float iter;
-  vec3 gray(vec4 col) {
-    return vec3((col.r+col.g+col.b)/3.0);
+  float d1(vec2 dir) {
+    return texture2D(depth1, v_texcoord+dir/vec2(800.0, 400.0)).r;
   }
+  float d2(vec2 dir) {
+    return texture2D(depth2, v_texcoord+dir/vec2(800.0, 400.0)).r;
+  }
+  vec3 p2(vec2 dir) {
+    return texture2D(aliased_image2, v_texcoord+dir/vec2(800.0, 400.0)).rgb;
+  }
+  void main() {
+    vec3 pixel1 = texture2D(image1, v_texcoord).rgb;
+    vec3 pixel2 = texture2D(image2, v_texcoord).rgb;
+    float depth1 = d1(vec2(0, 0));
+    float depth2 = d2(vec2(0, 0));
+
+    float Ndepth1 = d1(vec2(0, -1));
+    float Edepth1 = d1(vec2(1, 0));
+    float Sdepth1 = d1(vec2(0, 1));
+    float Wdepth1 = d1(vec2(-1, 0));
+
+    float Ndepth2 = d2(vec2(0, -1));
+    float Edepth2 = d2(vec2(1, 0));
+    float Sdepth2 = d2(vec2(0, 1));
+    float Wdepth2 = d2(vec2(-1, 0));
+
+    if (iter == 0.0 && texture2D(aliased_image1, v_texcoord).rgb != pixel1) {
+      depth1 = min(min(min(depth1, Ndepth1), min(Edepth1, Sdepth1)), Wdepth1);
+    }
+    if (p2(vec2(0, 0)) != pixel2) {
+      depth2 = min(min(Ndepth2, Edepth2), min(Sdepth2, Wdepth2));
+    }
+
+    if (depth1<depth2-1.0/255.0) {
+      gl_FragColor = vec4(pixel1, 1);
+    } else {
+      gl_FragColor = vec4(pixel2, 1);
+    }
+  }
+  `
+  var fs2_source =
+  `
+  precision highp float;
+  varying vec2 v_texcoord;
+  uniform sampler2D image1;
+  uniform sampler2D image2;
+  uniform sampler2D depth1;
+  uniform sampler2D depth2;
+  uniform sampler2D aliased_image1;
+  uniform sampler2D aliased_image2;
+  uniform float iter;
   float d1(vec2 dir) {
     return texture2D(depth1, v_texcoord+dir/vec2(800.0, 400.0)).r;
   }
@@ -167,36 +216,17 @@ function draw_frames() {
     float Sdepth2 = d2(vec2(0, 1));
     float Wdepth2 = d2(vec2(-1, 0));
 
-    depth1 = min(min(min(depth1, Ndepth1), min(Edepth1, Sdepth1)), Wdepth1);
-    depth2 = min(min(min(depth2, Ndepth2), min(Edepth2, Sdepth2)), Wdepth2);
-
-    if (depth1<depth2-1.0/255.0) {
-      gl_FragColor = vec4(pixel1*iter+(1.0-iter)*pixel2, 1);
-    } else {
-      gl_FragColor = vec4(pixel2*iter+(1.0-iter)*pixel1, 1);
+    if (iter == 0.0 && texture2D(aliased_image1, v_texcoord).rgb != pixel1) {
+      depth1 = min(min(Ndepth1, Edepth1), min(Sdepth1, Wdepth1));
     }
-  }
-  `
-  var fs2_source =
-  `
-  precision highp float;
-  varying vec2 v_texcoord;
-  uniform sampler2D image1;
-  uniform sampler2D image2;
-  uniform sampler2D depth1;
-  uniform sampler2D depth2;
-  vec3 gray(vec4 col) {
-    return vec3((col.r+col.g+col.b)/3.0);
-  }
-  void main() {
-    vec4 pixel1 = texture2D(image1, v_texcoord);
-    vec4 pixel2 = texture2D(image2, v_texcoord);
-    vec4 depth1 = texture2D(depth1, v_texcoord);
-    vec4 depth2 = texture2D(depth2, v_texcoord);
-    if (depth1.r<depth2.r) {
-      gl_FragColor = depth1;
+    if (texture2D(aliased_image2, v_texcoord).rgb != pixel2) {
+      depth2 = min(min(Ndepth2, Edepth2), min(Sdepth2, Wdepth2));
+    }
+
+    if (depth1<depth2) {
+      gl_FragColor = vec4(depth1, 0, 0, 1);
     } else {
-      gl_FragColor = depth2;
+      gl_FragColor = vec4(depth2, 0, 0, 1);
     }
   }
   `
@@ -228,6 +258,9 @@ function draw_frames() {
   gl.uniform1i(gl.getUniformLocation(prgm, "image2"), 1);
   gl.uniform1i(gl.getUniformLocation(prgm, "depth1"), 2);
   gl.uniform1i(gl.getUniformLocation(prgm, "depth2"), 3);
+  gl.uniform1i(gl.getUniformLocation(prgm, "aliased_image1"), 4);
+  gl.uniform1i(gl.getUniformLocation(prgm, "aliased_image2"), 5);
+  var opa_location = gl.getUniformLocation(prgm, "opa");
   var iter_location = gl.getUniformLocation(prgm, "iter");
 
   gl.useProgram(prgm2);
@@ -235,6 +268,9 @@ function draw_frames() {
   gl.uniform1i(gl.getUniformLocation(prgm2, "image2"), 1);
   gl.uniform1i(gl.getUniformLocation(prgm2, "depth1"), 2);
   gl.uniform1i(gl.getUniformLocation(prgm2, "depth2"), 3);
+  gl.uniform1i(gl.getUniformLocation(prgm2, "aliased_image1"), 4);
+  gl.uniform1i(gl.getUniformLocation(prgm2, "aliased_image2"), 5);
+  var iter2_location = gl.getUniformLocation(prgm2, "iter");
 
   var vertices = new Float32Array([
     -1, -1,
@@ -320,15 +356,20 @@ function draw_frames() {
 
 
   gl.useProgram(prgm2);
+  gl.uniform1f(iter2_location, 0);
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, images[start].image);
+  gl.bindTexture(gl.TEXTURE_2D, images[start].antialisased);
   gl.activeTexture(gl.TEXTURE1);
-  gl.bindTexture(gl.TEXTURE_2D, images[start+1].image);
+  gl.bindTexture(gl.TEXTURE_2D, images[start+1].antialisased);
   gl.activeTexture(gl.TEXTURE2);
   gl.bindTexture(gl.TEXTURE_2D, images[start].depth);
   gl.activeTexture(gl.TEXTURE3);
   gl.bindTexture(gl.TEXTURE_2D, images[start+1].depth);
   gl.activeTexture(gl.TEXTURE4);
+  gl.bindTexture(gl.TEXTURE_2D, images[start].alisased);
+  gl.activeTexture(gl.TEXTURE5);
+  gl.bindTexture(gl.TEXTURE_2D, images[start+1].alisased);
+  gl.activeTexture(gl.TEXTURE6);
   gl.bindTexture(gl.TEXTURE_2D, depth_out);
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, depth_out, 0);
@@ -340,16 +381,21 @@ function draw_frames() {
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
   gl.useProgram(prgm);
-  gl.uniform1f(iter_location, start_transparency);
+  gl.uniform1f(opa_location, start_transparency);
+  gl.uniform1f(iter_location, 0);
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, images[start].image);
+  gl.bindTexture(gl.TEXTURE_2D, images[start].antialisased);
   gl.activeTexture(gl.TEXTURE1);
-  gl.bindTexture(gl.TEXTURE_2D, images[start+1].image);
+  gl.bindTexture(gl.TEXTURE_2D, images[start+1].antialisased);
   gl.activeTexture(gl.TEXTURE2);
   gl.bindTexture(gl.TEXTURE_2D, images[start].depth);
   gl.activeTexture(gl.TEXTURE3);
   gl.bindTexture(gl.TEXTURE_2D, images[start+1].depth);
   gl.activeTexture(gl.TEXTURE4);
+  gl.bindTexture(gl.TEXTURE_2D, images[start].alisased);
+  gl.activeTexture(gl.TEXTURE5);
+  gl.bindTexture(gl.TEXTURE_2D, images[start+1].alisased);
+  gl.activeTexture(gl.TEXTURE6);
   gl.bindTexture(gl.TEXTURE_2D, tex_out);
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex_out, 0);
@@ -374,15 +420,20 @@ function draw_frames() {
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, tex_in);
         gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, images[i+1].image);
+        gl.bindTexture(gl.TEXTURE_2D, images[i+1].antialisased);
         gl.activeTexture(gl.TEXTURE2);
         gl.bindTexture(gl.TEXTURE_2D, depth_in);
         gl.activeTexture(gl.TEXTURE3);
         gl.bindTexture(gl.TEXTURE_2D, images[i+1].depth);
         gl.activeTexture(gl.TEXTURE4);
+        gl.bindTexture(gl.TEXTURE_2D, images[start].alisased);
+        gl.activeTexture(gl.TEXTURE5);
+        gl.bindTexture(gl.TEXTURE_2D, images[start+1].alisased);
+        gl.activeTexture(gl.TEXTURE6);
         gl.bindTexture(gl.TEXTURE_2D, depth_out);
 
         gl.useProgram(prgm2);
+        gl.uniform1f(iter2_location, i-start);
         gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, depth_out, 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -393,8 +444,9 @@ function draw_frames() {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
         gl.useProgram(prgm);
-        gl.uniform1f(iter_location, (i-start)/(end-start)*(1-start_transparency)+start_transparency);
-        gl.activeTexture(gl.TEXTURE4);
+        gl.uniform1f(iter_location, i-start);
+        gl.uniform1f(opa_location, (i-start)/(end-start)*(1-start_transparency)+start_transparency);
+        gl.activeTexture(gl.TEXTURE6);
         gl.bindTexture(gl.TEXTURE_2D, tex_out);
         gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex_out, 0);
@@ -433,7 +485,6 @@ function draw_final() {
   precision highp float;
   varying vec2 v_texcoord;
   uniform sampler2D image;
-  uniform sampler2D depth;
 
   vec4 gray(vec4 col) {
     return vec4(vec3((col.r+col.g+col.b)/3.0), 1);
@@ -457,7 +508,6 @@ function draw_final() {
   gl2.useProgram(prgm);
 
   gl2.uniform1i(gl2.getUniformLocation(prgm, "image"), 0);
-  gl2.uniform1i(gl2.getUniformLocation(prgm, "depth"), 1);
 
   var vertices = new Float32Array([
     -1, -1,
@@ -501,13 +551,9 @@ function draw_final() {
 
   var tex = gl2.createTexture();
   data_texture(gl2, tex, buffer, viewport.width, viewport.height);
-  var depth = gl2.createTexture();
-  data_texture(gl2, depth, depth_buffer, viewport.width, viewport.height);
 
   gl2.activeTexture(gl2.TEXTURE0);
   gl2.bindTexture(gl2.TEXTURE_2D, tex);
-  gl2.activeTexture(gl2.TEXTURE1);
-  gl2.bindTexture(gl2.TEXTURE_2D, depth);
 
   gl2.drawArrays(gl2.TRIANGLE_STRIP, 0, 4);
 }
