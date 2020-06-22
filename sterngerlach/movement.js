@@ -51,9 +51,10 @@ var n_images = 0;
 var t = 300;
 var start = 0;
 var end = 19;
-var skip = end+1;
+var skip = []
 var delay = 0;
 var start_transparency = 1;
+var include = [];
 var images;
 
 btGo.div.onclick = function() {
@@ -62,11 +63,15 @@ btGo.div.onclick = function() {
     images = [];
     var interval = setInterval(function () {
       if (i < n_images) {
-        //images.push(viewport.canvas3d.toDataURL("png"));
         textures();
       } else {
         clearInterval(interval);
         if (n_images !== 0) {
+          if (!include.length) {
+            for (var j = start; j <= end; j++) {
+              include.push(j);
+            }
+          }
           draw_frames();
         }
       }
@@ -85,6 +90,11 @@ btNext.div.onclick = function() {
       } else {
         clearInterval(interval);
         if (n_images !== 0) {
+          if (!include.length) {
+            for (var j = start; j <= end; j++) {
+              include.push(j);
+            }
+          }
           draw_frames();
         }
       }
@@ -95,7 +105,6 @@ btNext.div.onclick = function() {
 
 
 function textures() {
-  stop = 1;
   var renderer = viewport.__renderer;
 
   var depth_texture = new THREE.DepthTexture(viewport.width, viewport.height);
@@ -110,9 +119,8 @@ function textures() {
     png_data.minFilter = THREE.LinearFilter;
     renderer.setTexture2D(png_data, 0);
 
-    images.push({antialisased: renderer.properties.get(png_data).__webglTexture, aliased: renderer.properties.get(rt.texture).__webglTexture, depth: renderer.properties.get(rt.depthTexture).__webglTexture});
-    stop = 0;
-  }, 5);
+    images.push({antialiased: renderer.properties.get(png_data).__webglTexture, aliased: renderer.properties.get(rt.texture).__webglTexture, depth: renderer.properties.get(rt.depthTexture).__webglTexture});
+  }, 2);
 }
 
 
@@ -174,6 +182,22 @@ function draw_frames() {
     }
     if (p2(vec2(0, 0)) != pixel2) {
       depth2 = min(min(Ndepth2, Edepth2), min(Sdepth2, Wdepth2));
+      // vec3 initial_start = p2(vec2(0, 0));
+      // vec3 end;
+      // vec3 curr = pixel2;
+      // float frac;
+      // vec3 new_start = p1(vec2(0, 0));
+      // if (depth2==Ndepth2) {
+      //   end = p2(vec2(0, -1));
+      // } else if (depth2==Edepth2) {
+      //   end = p2(vec2(1, 0));
+      // } else if (depth2==Sdepth2) {
+      //   end = p2(vec2(0, 1));
+      // } else if (depth2==Wdepth2) {
+      //   end = p2(vec2(-1, 0));
+      // }
+      // frac = curr.r/(end.r-initial_start.r);
+      // pixel2 = frac*(end-new_start);
     }
 
     if (depth1<depth2-1.0/255.0) {
@@ -353,28 +377,26 @@ function draw_frames() {
   data_texture(gl, depth_out, null, viewport.width, viewport.height);
 
 
-
-
   gl.useProgram(prgm2);
   gl.uniform1f(iter2_location, 0);
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, images[start].antialisased);
+  gl.bindTexture(gl.TEXTURE_2D, images[include[0]].antialiased);
   gl.activeTexture(gl.TEXTURE1);
-  gl.bindTexture(gl.TEXTURE_2D, images[start+1].antialisased);
+  gl.bindTexture(gl.TEXTURE_2D, images[include[1]].antialiased);
   gl.activeTexture(gl.TEXTURE2);
-  gl.bindTexture(gl.TEXTURE_2D, images[start].depth);
+  gl.bindTexture(gl.TEXTURE_2D, images[include[0]].depth);
   gl.activeTexture(gl.TEXTURE3);
-  gl.bindTexture(gl.TEXTURE_2D, images[start+1].depth);
+  gl.bindTexture(gl.TEXTURE_2D, images[include[1]].depth);
   gl.activeTexture(gl.TEXTURE4);
-  gl.bindTexture(gl.TEXTURE_2D, images[start].alisased);
+  gl.bindTexture(gl.TEXTURE_2D, images[include[0]].aliased);
   gl.activeTexture(gl.TEXTURE5);
-  gl.bindTexture(gl.TEXTURE_2D, images[start+1].alisased);
+  gl.bindTexture(gl.TEXTURE_2D, images[include[1]].aliased);
   gl.activeTexture(gl.TEXTURE6);
   gl.bindTexture(gl.TEXTURE_2D, depth_out);
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, depth_out, 0);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  if (end-start===1) {
+  if (include.length===2) {
     this.depth_buffer = new Uint8Array(viewport.width*viewport.height*4);
     gl.readPixels(0, 0, viewport.width, viewport.height, gl.RGBA, gl.UNSIGNED_BYTE, depth_buffer);
   }
@@ -384,80 +406,78 @@ function draw_frames() {
   gl.uniform1f(opa_location, start_transparency);
   gl.uniform1f(iter_location, 0);
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, images[start].antialisased);
+  gl.bindTexture(gl.TEXTURE_2D, images[include[0]].antialiased);
   gl.activeTexture(gl.TEXTURE1);
-  gl.bindTexture(gl.TEXTURE_2D, images[start+1].antialisased);
+  gl.bindTexture(gl.TEXTURE_2D, images[include[1]].antialiased);
   gl.activeTexture(gl.TEXTURE2);
-  gl.bindTexture(gl.TEXTURE_2D, images[start].depth);
+  gl.bindTexture(gl.TEXTURE_2D, images[include[0]].depth);
   gl.activeTexture(gl.TEXTURE3);
-  gl.bindTexture(gl.TEXTURE_2D, images[start+1].depth);
+  gl.bindTexture(gl.TEXTURE_2D, images[include[1]].depth);
   gl.activeTexture(gl.TEXTURE4);
-  gl.bindTexture(gl.TEXTURE_2D, images[start].alisased);
+  gl.bindTexture(gl.TEXTURE_2D, images[include[0]].aliased);
   gl.activeTexture(gl.TEXTURE5);
-  gl.bindTexture(gl.TEXTURE_2D, images[start+1].alisased);
+  gl.bindTexture(gl.TEXTURE_2D, images[include[1]].aliased);
   gl.activeTexture(gl.TEXTURE6);
   gl.bindTexture(gl.TEXTURE_2D, tex_out);
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex_out, 0);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  if (end-start===1) {
+  if (include.length===2) {
     this.buffer = new Uint8Array(viewport.width*viewport.height*4);
     gl.readPixels(0, 0, viewport.width, viewport.height, gl.RGBA, gl.UNSIGNED_BYTE, buffer);
     draw_final();
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   } else {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    for (var i = start+1; i < end; i++) {
-      if (i !== skip) {
-        tex_in = tex_out;
-        var tex_out = gl.createTexture();
-        data_texture(gl, tex_out, null, viewport.width, viewport.height);
+    for (var i = 1; i < include.length-1; i++) {
+      tex_in = tex_out;
+      var tex_out = gl.createTexture();
+      data_texture(gl, tex_out, null, viewport.width, viewport.height);
 
-        depth_in = depth_out;
-        var depth_out = gl.createTexture();
-        data_texture(gl, depth_out, null, viewport.width, viewport.height);
+      depth_in = depth_out;
+      var depth_out = gl.createTexture();
+      data_texture(gl, depth_out, null, viewport.width, viewport.height);
 
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, tex_in);
-        gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, images[i+1].antialisased);
-        gl.activeTexture(gl.TEXTURE2);
-        gl.bindTexture(gl.TEXTURE_2D, depth_in);
-        gl.activeTexture(gl.TEXTURE3);
-        gl.bindTexture(gl.TEXTURE_2D, images[i+1].depth);
-        gl.activeTexture(gl.TEXTURE4);
-        gl.bindTexture(gl.TEXTURE_2D, images[start].alisased);
-        gl.activeTexture(gl.TEXTURE5);
-        gl.bindTexture(gl.TEXTURE_2D, images[start+1].alisased);
-        gl.activeTexture(gl.TEXTURE6);
-        gl.bindTexture(gl.TEXTURE_2D, depth_out);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, tex_in);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, images[include[i+1]].antialiased);
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, depth_in);
+      gl.activeTexture(gl.TEXTURE3);
+      gl.bindTexture(gl.TEXTURE_2D, images[include[i+1]].depth);
+      gl.activeTexture(gl.TEXTURE4);
+      gl.bindTexture(gl.TEXTURE_2D, images[include[i]].aliased);
+      gl.activeTexture(gl.TEXTURE5);
+      gl.bindTexture(gl.TEXTURE_2D, images[include[i+1]].aliased);
+      gl.activeTexture(gl.TEXTURE6);
+      gl.bindTexture(gl.TEXTURE_2D, depth_out);
 
-        gl.useProgram(prgm2);
-        gl.uniform1f(iter2_location, i-start);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, depth_out, 0);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        if (i===end-1) {
-          this.depth_buffer = new Uint8Array(viewport.width*viewport.height*4);
-          gl.readPixels(0, 0, viewport.width, viewport.height, gl.RGBA, gl.UNSIGNED_BYTE, depth_buffer);
-        }
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-        gl.useProgram(prgm);
-        gl.uniform1f(iter_location, i-start);
-        gl.uniform1f(opa_location, (i-start)/(end-start)*(1-start_transparency)+start_transparency);
-        gl.activeTexture(gl.TEXTURE6);
-        gl.bindTexture(gl.TEXTURE_2D, tex_out);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex_out, 0);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        if (i===end-1) {
-          this.buffer = new Uint8Array(viewport.width*viewport.height*4);
-          gl.readPixels(0, 0, viewport.width, viewport.height, gl.RGBA, gl.UNSIGNED_BYTE, buffer);
-          draw_final();
-        }
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.useProgram(prgm2);
+      gl.uniform1f(iter2_location, i-start);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, depth_out, 0);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      if (i===include.length-2) {
+        this.depth_buffer = new Uint8Array(viewport.width*viewport.height*4);
+        gl.readPixels(0, 0, viewport.width, viewport.height, gl.RGBA, gl.UNSIGNED_BYTE, depth_buffer);
       }
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+      gl.useProgram(prgm);
+      gl.uniform1f(iter_location, i-start);
+      gl.uniform1f(opa_location, (i-start)/(end-start)*(1-start_transparency)+start_transparency);
+      gl.activeTexture(gl.TEXTURE6);
+      gl.bindTexture(gl.TEXTURE_2D, tex_out);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex_out, 0);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      if (i===include.length-2) {
+        this.buffer = new Uint8Array(viewport.width*viewport.height*4);
+        gl.readPixels(0, 0, viewport.width, viewport.height, gl.RGBA, gl.UNSIGNED_BYTE, buffer);
+        draw_final();
+      }
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
   }
 }
