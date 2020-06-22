@@ -187,7 +187,7 @@ SGE.LOOP_FIELD_CONE_OPACITY		=	0.3;
 SGE.LOOP_FIELD_AXIS_SIZE		=	1; // length of the magnetic field axis that shows up
 
 // Animation settings
-SGE.LOOP_SPIN_FREQUENCY			=	1; // how fast the charge spins around
+SGE.LOOP_SPIN_FREQUENCY			=	.5; // how fast the charge spins around
 // This is the precession frequency for the current loop when under influence of the magnets
 // Please note that this precession is not a physical simulation, but only an aesthetical
 // reproduction of the actual behavior.
