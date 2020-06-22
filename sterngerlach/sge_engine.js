@@ -67,8 +67,8 @@ SGE.USE_REMOTE_ASSETS			=	false;
 
 // -------------------------------------------------------------------------------------------------
 // Polygon detail levels
-SGE.MESH_ROUND_SEGMENTS			=	16; // for cylinders and cones
-SGE.MESH_SPHERE_SEGMENTS		=	12; // for sphere; both latitude and longitude
+SGE.MESH_ROUND_SEGMENTS			=	128; // for cylinders and cones
+SGE.MESH_SPHERE_SEGMENTS		=	96; // for sphere; both latitude and longitude
 
 // -------------------------------------------------------------------------------------------------
 // Material properties
@@ -176,7 +176,7 @@ SGE.LOOP_I_ARROW_RADIUS			=	SGE.LOOP_RADIUS; // radius the arrow curves around
 SGE.LOOP_I_ARROW_TUBE_RADIUS	=	0.02;
 SGE.LOOP_I_ARROW_HEAD_RADIUS	=	0.06;
 SGE.LOOP_I_ARROW_CURVE_DETAIL	=	SGE.MESH_ROUND_SEGMENTS; // number of segments to create arrow
-SGE.LOOP_I_ARROW_TUBE_DETAIL	=	6; // number of segments to create tube
+SGE.LOOP_I_ARROW_TUBE_DETAIL	=	SGE.MESH_ROUND_SEGMENTS; // number of segments to create tube
 SGE.LOOP_I_ARROW_MAX_ANGLE		=	SGE.TAU/360*300; // angle covered by the arrow (tail to tip)
 SGE.LOOP_I_ARROW_HEAD_ANGLE		=	SGE.TAU/360*20; // angle covered by the head
 
