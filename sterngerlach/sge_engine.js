@@ -50,7 +50,7 @@ var SGE = {};
 SGE.TAU							=	6.2831853071; // tau > pi!
 SGE.EPSILON						=	1e-2; // how much to nudge surfaces so they don't intersect
 SGE.DEFAULT_CAMERA_FOV			=	60; // field of view for camera
-SGE.CAMERA_Z_NEAR				=	1; // camera frustum z-near distance
+SGE.CAMERA_Z_NEAR				=	0.1; // camera frustum z-near distance
 SGE.CAMERA_Z_FAR				=	15; // camera frustum z-far distance
 SGE.SKY_RADIUS					=	10000; // radius for the sky-sphere (half of z-far is max)
 SGE.ANTIALIAS					=	true; // request antialiasing on the WebGL renderer
@@ -67,8 +67,8 @@ SGE.USE_REMOTE_ASSETS			=	false;
 
 // -------------------------------------------------------------------------------------------------
 // Polygon detail levels
-SGE.MESH_ROUND_SEGMENTS			=	16; // for cylinders and cones
-SGE.MESH_SPHERE_SEGMENTS		=	12; // for sphere; both latitude and longitude
+SGE.MESH_ROUND_SEGMENTS			=	128; // for cylinders and cones
+SGE.MESH_SPHERE_SEGMENTS		=	96; // for sphere; both latitude and longitude
 
 // -------------------------------------------------------------------------------------------------
 // Material properties
@@ -176,7 +176,7 @@ SGE.LOOP_I_ARROW_RADIUS			=	SGE.LOOP_RADIUS; // radius the arrow curves around
 SGE.LOOP_I_ARROW_TUBE_RADIUS	=	0;  // 0.02 originally
 SGE.LOOP_I_ARROW_HEAD_RADIUS	=	0;  // 0.06 originally
 SGE.LOOP_I_ARROW_CURVE_DETAIL	=	SGE.MESH_ROUND_SEGMENTS; // number of segments to create arrow
-SGE.LOOP_I_ARROW_TUBE_DETAIL	=	6; // number of segments to create tube
+SGE.LOOP_I_ARROW_TUBE_DETAIL	=	SGE.MESH_ROUND_SEGMENTS; // number of segments to create tube
 SGE.LOOP_I_ARROW_MAX_ANGLE		=	SGE.TAU/360*300; // angle covered by the arrow (tail to tip)
 SGE.LOOP_I_ARROW_HEAD_ANGLE		=	SGE.TAU/360*20; // angle covered by the head
 
