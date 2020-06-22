@@ -191,7 +191,7 @@ SGE.LOOP_SPIN_FREQUENCY			=	1; // how fast the charge spins around
 // This is the precession frequency for the current loop when under influence of the magnets
 // Please note that this precession is not a physical simulation, but only an aesthetical
 // reproduction of the actual behavior.
-SGE.LOOP_PRECESSION_FREQUENCY	=	1;
+SGE.LOOP_PRECESSION_FREQUENCY	=	.5; // previously 1
 
 // -------------------------------------------------------------------------------------------------
 // For analyzers, sources and detectors

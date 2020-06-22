@@ -41,9 +41,8 @@ app.add(viewport, 10, 10);
 
 // Add some lights
 // Two opposing lights are good for creating volume highlights
-viewport.addLight(-50, 80, 200, 0x010101*200);
-viewport.addLight(50, -80, -200, 0x010101*200);
-
+viewport.addLight(-150, 100, 200, 0x010101*200);
+viewport.addLight(150, -100, -200, 0x010101*200);
 // Create a message box for instructions and add it
 var messagebox = new SGE.MessageBox(600, 170);
 app.add(messagebox, 10, 420);
