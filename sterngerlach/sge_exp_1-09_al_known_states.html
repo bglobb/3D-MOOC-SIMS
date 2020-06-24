@@ -16,6 +16,24 @@
 <p>Press the <b>up</b>, <b>down</b>, <b>left</b>, and <b>right</b> keys to change viewing angle.<br>Press <b>i</b> to zoom in. Press <b>o</b> to zoom out.<br>Press the <b>w</b>, <b>a</b>, <b>s</b>, and <b>d</b> keys to change the x and y components of the point you rotate around.</p>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/downloadjs/1.4.8/download.min.js" charset="utf-8"></script>
 <script src="movement.js" charset="utf-8"></script>
-
+<div class="input-container" style="position: absolute; right: 0%; top: 0%; border: thick solid black; padding: 20px;">
+    SGE.focus_point.x=<input type="text" id="fpx" value=-1 style="margin: 10px 5px 10px 5px;">
+    SGE.focus_point.y=<input type="text" id="fpy" value=-1 style="margin: 10px 5px 10px 5px;">
+    <br>
+    camera.phi=<input type="text" id="phi" value=-1 style="margin: 10px 5px 10px 5px;">
+    camera.theta=<input type="text" id="theta" value=-1 style="margin: 10px 5px 10px 5px;">
+    <br>
+    camera.rho=<input type="text" id="rho" value=-1 style="margin: 10px 5px 10px 5px;">
+    <button type="button" name="button" id="upd_cam">Update Camera</button>
+    <hr>
+    n_images=<input type="text" id="ni" value=-1 style="margin: 10px 5px 10px 5px;">
+    start=<input type="text" id="start" value=-1 style="margin: 10px 5px 10px 5px;">
+    <br>
+    end=<input type="text" id="end" value=-1 style="margin: 10px 5px 10px 5px;">
+    t=<input type="text" id="t" value=-1 style="margin: 10px 5px 10px 5px;">
+    <br>
+    delay=<input type="text" id="dly" value=-1 style="margin: 10px 5px 10px 5px;">
+    <button type="button" name="button" id="upd_cap">Update Capture Parameters</button>
+  </div>
 </body>
 </html>

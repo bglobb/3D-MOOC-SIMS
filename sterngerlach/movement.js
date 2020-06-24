@@ -2,7 +2,7 @@ var prev_theta;
 var prev_phi;
 var prev_rho;
 
-$("*").keydown(function(e) {
+$("*").keydown(function (e) {
   if (!camera.focusedOn) {
     camera.focusOn(SGE.ORIGIN);
   } else {
@@ -11,54 +11,83 @@ $("*").keydown(function(e) {
   prev_theta = camera.theta;
   prev_phi = camera.phi;
   prev_rho = camera.rho;
-  if (e.which===39) {
-    camera.theta -= Math.PI/100;
+  if (e.which === 39) {
+    camera.theta -= Math.PI / 100;
     prev_theta = camera.theta;
-  } else if (e.which===37) {
-    camera.theta += Math.PI/100;
-  } else if (e.which===38) {
-    camera.phi -= Math.PI/100;
-  } else if (e.which===40) {
-    camera.phi += Math.PI/100;
-  } else if (e.which===73) {
-    camera.rho -= .1;
-  } else if (e.which===79) {
-    camera.rho += .1;
-  } else if (e.which===87) {
-    SGE.focus_point.y += .1;
-    camera.focusOn(SGE.focus_point);
-    camera.phi = prev_phi;
-    camera.rho = prev_rho;
-  } else if (e.which===65) {
-    SGE.focus_point.x -= .1;
-    camera.focusOn(SGE.focus_point);
-    camera.theta = prev_theta;
-    camera.rho = prev_rho;
-  } else if (e.which===83) {
-    SGE.focus_point.y -= .1;
-    camera.focusOn(SGE.focus_point);
-    camera.phi = prev_phi;
-    camera.rho = prev_rho;
-  } else if (e.which===68) {
-    SGE.focus_point.x += .1;
-    camera.focusOn(SGE.focus_point);
-    camera.theta = prev_theta;
-    camera.rho = prev_rho;
-  }
+  } else if (e.which === 37) {
+    camera.theta += Math.PI / 100;
+  } else if (e.which === 38) {
+    camera.phi -= Math.PI / 100;
+  } else if (e.which === 40) {
+    camera.phi += Math.PI / 100;
+  } 
 });
 
 var n_images = 0;
 var t = 300;
 var start = 0;
 var end = 19;
-var skip = []
+var skip = [];
 var delay = 0;
 var start_transparency = 1;
 var include = [];
 var images;
+$(document).ready(function () {
+  $("#upd_cam").click(function () {
+    var v = $("#fpx").val();
+    if (v != "-1") {
+      SGE.focus_point.x = eval(v);
+    }
+    v = $("#fpy").val();
+    if (v != "-1") {
+      SGE.focusedOn.y = eval(v);
+    }
+    v = $("#theta").val();
+    if (v != "-1") {
+      camera.theta = eval(v);
+    }
+    v = $("#phi").val();
+    if (v != "-1") {
+      camera.phi = eval(v);
+    }
+    v = $("#rho").val();
+    if (v != "-1") {
+      camera.rho = eval(v);
+    }
+  });
+  $("#upd_cap").click(function () {
+    var v = $("#ni").val();
+    if (v != "-1") {
+      n_images = eval(v);
+    }
+    v = $("#start").val();
+    if (v != "-1") {
+      start = eval(v);
+    }
+    v = $("#end").val();
+    if (v != "-1") {
+      end = eval(v);
+    }
+    v = $("#t").val();
+    if (v != "-1") {
+      t = eval(v);
+    }
+    v = $("#dly").val();
+    if (v != "-1") {
+      delay = eval(v);
+    }
+  });
+});
+// $("#upd_cam").click(function(){
+//   var th = $("#theta").val();
+//   alert(th);
+//   if(th != "-1"){
+//     camera.theta = th;
+//   }
+// })
 
-btGo.div.onclick = function() {
-  setTimeout(function() {
+btGo.div.onclick = function () {
+  setTimeout(function () {
     var i = 0;
     images = [];
     var interval = setInterval(function () {
@@ -78,10 +107,10 @@ btGo.div.onclick = function() {
       i++;
     }, t);
   }, delay);
-}
+};
 
-btNext.div.onclick = function() {
-  setTimeout(function() {
+btNext.div.onclick = function () {
+  setTimeout(function () {
     var i = 0;
     images = [];
     var interval = setInterval(function () {
@@ -101,36 +130,40 @@ btNext.div.onclick = function() {
       i++;
     }, t);
   }, delay);
-}
-
+};
 
 function textures() {
   var renderer = viewport.__renderer;
 
   var depth_texture = new THREE.DepthTexture(viewport.width, viewport.height);
-  var rt = new THREE.WebGLRenderTarget( viewport.width, viewport.height, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
+  var rt = new THREE.WebGLRenderTarget(viewport.width, viewport.height, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.NearestFilter,
+  });
   rt.depthTexture = depth_texture;
   renderer.render(viewport.__scene, viewport.__camera, rt);
 
-  this.png_data = new THREE.TextureLoader().load(viewport.canvas3d.toDataURL("png"));
-  setTimeout(function() {
+  this.png_data = new THREE.TextureLoader().load(
+    viewport.canvas3d.toDataURL("png")
+  );
+  setTimeout(function () {
     png_data.generateMipmaps = false;
     png_data.wrapS = png_data.wrapT = THREE.ClampToEdgeWrapping;
     png_data.minFilter = THREE.LinearFilter;
     renderer.setTexture2D(png_data, 0);
 
-    images.push({antialiased: renderer.properties.get(png_data).__webglTexture, aliased: renderer.properties.get(rt.texture).__webglTexture, depth: renderer.properties.get(rt.depthTexture).__webglTexture});
+    images.push({
+      antialiased: renderer.properties.get(png_data).__webglTexture,
+      aliased: renderer.properties.get(rt.texture).__webglTexture,
+      depth: renderer.properties.get(rt.depthTexture).__webglTexture,
+    });
   }, 2);
 }
-
-
-
 
 function draw_frames() {
   this.gl = viewport.__renderer.context;
 
-  var vs_source =
-  `
+  var vs_source = `
   precision highp float;
   attribute vec2 vert_pos;
   attribute vec2 a_texcoord;
@@ -139,9 +172,8 @@ function draw_frames() {
     v_texcoord = a_texcoord;
     gl_Position = vec4(vec2(1, -1)*vert_pos, 0, 1);
   }
-  `
-  var fs_source =
-  `
+  `;
+  var fs_source = `
   precision highp float;
   varying vec2 v_texcoord;
   uniform sampler2D image1;
@@ -206,9 +238,8 @@ function draw_frames() {
       gl_FragColor = vec4(pixel2, 1);
     }
   }
-  `
-  var fs2_source =
-  `
+  `;
+  var fs2_source = `
   precision highp float;
   varying vec2 v_texcoord;
   uniform sampler2D image1;
@@ -253,7 +284,7 @@ function draw_frames() {
       gl_FragColor = vec4(depth2, 0, 0, 1);
     }
   }
-  `
+  `;
   var prgm = gl.createProgram();
   var vs = gl.createShader(gl.VERTEX_SHADER);
   var fs = gl.createShader(gl.FRAGMENT_SHADER);
@@ -276,7 +307,6 @@ function draw_frames() {
   gl.attachShader(prgm2, fs);
   gl.linkProgram(prgm2);
 
-
   gl.useProgram(prgm);
   gl.uniform1i(gl.getUniformLocation(prgm, "image1"), 0);
   gl.uniform1i(gl.getUniformLocation(prgm, "image2"), 1);
@@ -296,42 +326,32 @@ function draw_frames() {
   gl.uniform1i(gl.getUniformLocation(prgm2, "aliased_image2"), 5);
   var iter2_location = gl.getUniformLocation(prgm2, "iter");
 
-  var vertices = new Float32Array([
-    -1, -1,
-    -1, 1,
-    1, -1,
-    1, 1
-  ]);
-  var t_vertices = new Float32Array([
-    0, 1,
-    0, 0,
-    1, 1,
-    1, 0
-  ]);
+  var vertices = new Float32Array([-1, -1, -1, 1, 1, -1, 1, 1]);
+  var t_vertices = new Float32Array([0, 1, 0, 0, 1, 1, 1, 0]);
 
   var vbo = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-  var pal = gl.getAttribLocation(prgm2, 'vert_pos');
+  var pal = gl.getAttribLocation(prgm2, "vert_pos");
   gl.vertexAttribPointer(
     pal,
     2,
     gl.FLOAT,
     gl.FALSE,
-    2*Float32Array.BYTES_PER_ELEMENT,  // Size of individual vertex
-    0  // Offset
+    2 * Float32Array.BYTES_PER_ELEMENT, // Size of individual vertex
+    0 // Offset
   );
   gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
   gl.enableVertexAttribArray(pal);
   var tbo = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, tbo);
-  var tal = gl.getAttribLocation(prgm2, 'a_texcoord');
+  var tal = gl.getAttribLocation(prgm2, "a_texcoord");
   gl.vertexAttribPointer(
     tal,
     2,
     gl.FLOAT,
     gl.FALSE,
-    2*Float32Array.BYTES_PER_ELEMENT,  // Size of individual vertex
-    0  // Offset
+    2 * Float32Array.BYTES_PER_ELEMENT, // Size of individual vertex
+    0 // Offset
   );
   gl.bufferData(gl.ARRAY_BUFFER, t_vertices, gl.STATIC_DRAW);
   gl.enableVertexAttribArray(tal);
@@ -339,27 +359,27 @@ function draw_frames() {
   gl.useProgram(prgm);
   var vbo = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-  var pal = gl.getAttribLocation(prgm, 'vert_pos');
+  var pal = gl.getAttribLocation(prgm, "vert_pos");
   gl.vertexAttribPointer(
     pal,
     2,
     gl.FLOAT,
     gl.FALSE,
-    2*Float32Array.BYTES_PER_ELEMENT,  // Size of individual vertex
-    0  // Offset
+    2 * Float32Array.BYTES_PER_ELEMENT, // Size of individual vertex
+    0 // Offset
   );
   gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
   gl.enableVertexAttribArray(pal);
   var tbo = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, tbo);
-  var tal = gl.getAttribLocation(prgm, 'a_texcoord');
+  var tal = gl.getAttribLocation(prgm, "a_texcoord");
   gl.vertexAttribPointer(
     tal,
     2,
     gl.FLOAT,
     gl.FALSE,
-    2*Float32Array.BYTES_PER_ELEMENT,  // Size of individual vertex
-    0  // Offset
+    2 * Float32Array.BYTES_PER_ELEMENT, // Size of individual vertex
+    0 // Offset
   );
   gl.bufferData(gl.ARRAY_BUFFER, t_vertices, gl.STATIC_DRAW);
   gl.enableVertexAttribArray(tal);
@@ -375,7 +395,6 @@ function draw_frames() {
   data_texture(gl, depth_in, null, viewport.width, viewport.height);
   var depth_out = gl.createTexture();
   data_texture(gl, depth_out, null, viewport.width, viewport.height);
-
 
   gl.useProgram(prgm2);
   gl.uniform1f(iter2_location, 0);
@@ -394,11 +413,25 @@ function draw_frames() {
   gl.activeTexture(gl.TEXTURE6);
   gl.bindTexture(gl.TEXTURE_2D, depth_out);
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, depth_out, 0);
+  gl.framebufferTexture2D(
+    gl.FRAMEBUFFER,
+    gl.COLOR_ATTACHMENT0,
+    gl.TEXTURE_2D,
+    depth_out,
+    0
+  );
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  if (include.length===2) {
-    this.depth_buffer = new Uint8Array(viewport.width*viewport.height*4);
-    gl.readPixels(0, 0, viewport.width, viewport.height, gl.RGBA, gl.UNSIGNED_BYTE, depth_buffer);
+  if (include.length === 2) {
+    this.depth_buffer = new Uint8Array(viewport.width * viewport.height * 4);
+    gl.readPixels(
+      0,
+      0,
+      viewport.width,
+      viewport.height,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      depth_buffer
+    );
   }
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
@@ -420,16 +453,30 @@ function draw_frames() {
   gl.activeTexture(gl.TEXTURE6);
   gl.bindTexture(gl.TEXTURE_2D, tex_out);
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex_out, 0);
+  gl.framebufferTexture2D(
+    gl.FRAMEBUFFER,
+    gl.COLOR_ATTACHMENT0,
+    gl.TEXTURE_2D,
+    tex_out,
+    0
+  );
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  if (include.length===2) {
-    this.buffer = new Uint8Array(viewport.width*viewport.height*4);
-    gl.readPixels(0, 0, viewport.width, viewport.height, gl.RGBA, gl.UNSIGNED_BYTE, buffer);
+  if (include.length === 2) {
+    this.buffer = new Uint8Array(viewport.width * viewport.height * 4);
+    gl.readPixels(
+      0,
+      0,
+      viewport.width,
+      viewport.height,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      buffer
+    );
     draw_final();
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   } else {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    for (var i = 1; i < include.length-1; i++) {
+    for (var i = 1; i < include.length - 1; i++) {
       tex_in = tex_out;
       var tex_out = gl.createTexture();
       data_texture(gl, tex_out, null, viewport.width, viewport.height);
@@ -441,40 +488,74 @@ function draw_frames() {
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, tex_in);
       gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D, images[include[i+1]].antialiased);
+      gl.bindTexture(gl.TEXTURE_2D, images[include[i + 1]].antialiased);
       gl.activeTexture(gl.TEXTURE2);
       gl.bindTexture(gl.TEXTURE_2D, depth_in);
       gl.activeTexture(gl.TEXTURE3);
-      gl.bindTexture(gl.TEXTURE_2D, images[include[i+1]].depth);
+      gl.bindTexture(gl.TEXTURE_2D, images[include[i + 1]].depth);
       gl.activeTexture(gl.TEXTURE4);
       gl.bindTexture(gl.TEXTURE_2D, images[include[i]].aliased);
       gl.activeTexture(gl.TEXTURE5);
-      gl.bindTexture(gl.TEXTURE_2D, images[include[i+1]].aliased);
+      gl.bindTexture(gl.TEXTURE_2D, images[include[i + 1]].aliased);
       gl.activeTexture(gl.TEXTURE6);
       gl.bindTexture(gl.TEXTURE_2D, depth_out);
 
       gl.useProgram(prgm2);
-      gl.uniform1f(iter2_location, i-start);
+      gl.uniform1f(iter2_location, i - start);
       gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, depth_out, 0);
+      gl.framebufferTexture2D(
+        gl.FRAMEBUFFER,
+        gl.COLOR_ATTACHMENT0,
+        gl.TEXTURE_2D,
+        depth_out,
+        0
+      );
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      if (i===include.length-2) {
-        this.depth_buffer = new Uint8Array(viewport.width*viewport.height*4);
-        gl.readPixels(0, 0, viewport.width, viewport.height, gl.RGBA, gl.UNSIGNED_BYTE, depth_buffer);
+      if (i === include.length - 2) {
+        this.depth_buffer = new Uint8Array(
+          viewport.width * viewport.height * 4
+        );
+        gl.readPixels(
+          0,
+          0,
+          viewport.width,
+          viewport.height,
+          gl.RGBA,
+          gl.UNSIGNED_BYTE,
+          depth_buffer
+        );
       }
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
       gl.useProgram(prgm);
-      gl.uniform1f(iter_location, i-start);
-      gl.uniform1f(opa_location, (i-start)/(end-start)*(1-start_transparency)+start_transparency);
+      gl.uniform1f(iter_location, i - start);
+      gl.uniform1f(
+        opa_location,
+        ((i - start) / (end - start)) * (1 - start_transparency) +
+          start_transparency
+      );
       gl.activeTexture(gl.TEXTURE6);
       gl.bindTexture(gl.TEXTURE_2D, tex_out);
       gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex_out, 0);
+      gl.framebufferTexture2D(
+        gl.FRAMEBUFFER,
+        gl.COLOR_ATTACHMENT0,
+        gl.TEXTURE_2D,
+        tex_out,
+        0
+      );
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      if (i===include.length-2) {
-        this.buffer = new Uint8Array(viewport.width*viewport.height*4);
-        gl.readPixels(0, 0, viewport.width, viewport.height, gl.RGBA, gl.UNSIGNED_BYTE, buffer);
+      if (i === include.length - 2) {
+        this.buffer = new Uint8Array(viewport.width * viewport.height * 4);
+        gl.readPixels(
+          0,
+          0,
+          viewport.width,
+          viewport.height,
+          gl.RGBA,
+          gl.UNSIGNED_BYTE,
+          buffer
+        );
         draw_final();
       }
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -489,8 +570,7 @@ document.body.appendChild(c);
 var gl2 = c.getContext("webgl");
 
 function draw_final() {
-  var vs_source =
-  `
+  var vs_source = `
   precision highp float;
   attribute vec2 vert_pos;
   attribute vec2 a_texcoord;
@@ -499,9 +579,8 @@ function draw_final() {
     v_texcoord = vec2(a_texcoord.x, 1.0-a_texcoord.y);
     gl_Position = vec4(vert_pos, 0, 1);
   }
-  `
-  var fs_source =
-  `
+  `;
+  var fs_source = `
   precision highp float;
   varying vec2 v_texcoord;
   uniform sampler2D image;
@@ -513,7 +592,7 @@ function draw_final() {
   void main() {
     gl_FragColor = gray(texture2D(image, v_texcoord));
   }
-  `
+  `;
 
   var vs = gl2.createShader(gl2.VERTEX_SHADER);
   var fs = gl2.createShader(gl2.FRAGMENT_SHADER);
@@ -529,42 +608,32 @@ function draw_final() {
 
   gl2.uniform1i(gl2.getUniformLocation(prgm, "image"), 0);
 
-  var vertices = new Float32Array([
-    -1, -1,
-    -1, 1,
-    1, -1,
-    1, 1
-  ]);
-  var t_vertices = new Float32Array([
-    0, 1,
-    0, 0,
-    1, 1,
-    1, 0
-  ]);
+  var vertices = new Float32Array([-1, -1, -1, 1, 1, -1, 1, 1]);
+  var t_vertices = new Float32Array([0, 1, 0, 0, 1, 1, 1, 0]);
 
   var vbo = gl2.createBuffer();
   gl2.bindBuffer(gl2.ARRAY_BUFFER, vbo);
-  var pal = gl2.getAttribLocation(prgm, 'vert_pos');
+  var pal = gl2.getAttribLocation(prgm, "vert_pos");
   gl2.vertexAttribPointer(
     pal,
     2,
     gl2.FLOAT,
     false,
-    2*Float32Array.BYTES_PER_ELEMENT,  // Size of individual vertex
-    0  // Offset
+    2 * Float32Array.BYTES_PER_ELEMENT, // Size of individual vertex
+    0 // Offset
   );
   gl2.bufferData(gl2.ARRAY_BUFFER, vertices, gl2.STATIC_DRAW);
   gl2.enableVertexAttribArray(pal);
   var tbo = gl2.createBuffer();
   gl2.bindBuffer(gl2.ARRAY_BUFFER, tbo);
-  var tal = gl2.getAttribLocation(prgm, 'a_texcoord');
+  var tal = gl2.getAttribLocation(prgm, "a_texcoord");
   gl2.vertexAttribPointer(
     tal,
     2,
     gl2.FLOAT,
     false,
-    2*Float32Array.BYTES_PER_ELEMENT,  // Size of individual vertex
-    0  // Offset
+    2 * Float32Array.BYTES_PER_ELEMENT, // Size of individual vertex
+    0 // Offset
   );
   gl2.bufferData(gl2.ARRAY_BUFFER, t_vertices, gl2.STATIC_DRAW);
   gl2.enableVertexAttribArray(tal);
@@ -580,7 +649,17 @@ function draw_final() {
 
 function data_texture(gl, tex, data, width, height) {
   gl.bindTexture(gl.TEXTURE_2D, tex);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    width,
+    height,
+    0,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    data
+  );
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
