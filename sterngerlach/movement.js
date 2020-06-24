@@ -41,7 +41,7 @@ $(document).ready(function () {
     }
     v = $("#fpy").val();
     if (v != "-1") {
-      SGE.focuse_point.y = eval(v);
+      SGE.focus_point.y = eval(v);
     }
     v = $("#theta").val();
     if (v != "-1") {
