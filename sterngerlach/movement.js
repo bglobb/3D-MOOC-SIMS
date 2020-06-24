@@ -1,3 +1,4 @@
+var pi = Math.PI;
 var prev_theta;
 var prev_phi;
 var prev_rho;
